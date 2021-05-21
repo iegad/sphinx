@@ -1,0 +1,19 @@
+server:
+    host: 127.0.0.1:10000
+    protocol: kcp
+    maxConn: 100
+    timeout: 15
+    project: state
+    service: sphinx
+    id: 1885c584-392c-43c7-a7a3-6a8b0ba93f86
+    logPath: ""
+etcd:
+    hosts:
+      - 127.0.0.1:2379
+    user: ""
+    pass: ""
+mysql:
+    addr: 127.0.0.1
+    port: 3306
+    user: root
+    pass: "123456"
