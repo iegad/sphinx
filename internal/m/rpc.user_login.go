@@ -51,6 +51,9 @@ func (this_ *Sphinx) UserLogin(c *piper.Context, req *pb.UserLoginReq, rsp *pb.U
 		dataList = append(dataList, user)
 	}
 
+	// 在REDIS中记录会话信息
+	// TODO
+
 	// 返回信息
 	rsp.UserLoginInfo = &pb.UserLoginInfo{
 		UserID: dataList[0].UserID,
