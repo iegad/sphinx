@@ -5,14 +5,33 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/iegad/hydra/micro"
 	"github.com/iegad/hydra/mod/home"
 	"github.com/iegad/hydra/pb"
 	"github.com/iegad/kraken/log"
-	"github.com/iegad/kraken/piper"
+	"github.com/iegad/kraken/utils"
 	"github.com/iegad/sphinx/internal/com"
+	"google.golang.org/protobuf/proto"
 )
 
-func (this_ *Sphinx) UserLogin(c *piper.Context, req *pb.UserLoginReq, rsp *pb.UserLoginRsp) error {
+type UserLogin struct {
+}
+
+func (this_ *UserLogin) MID() int32 {
+	return 100
+}
+
+func (this_ *UserLogin) Do(c *micro.User, in *pb.Package) error {
+	utils.Assert(c != nil && in != nil, "userLogin.do params are invalid")
+
+	req := &pb.UserLoginReq{}
+
+	err := proto.Unmarshal(in.Data, req)
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
 	// 入参检查
 	if len(req.Email) == 0 && len(req.PhoneNum) == 0 {
 		return errors.New("account is invalid")
@@ -55,10 +74,23 @@ func (this_ *Sphinx) UserLogin(c *piper.Context, req *pb.UserLoginReq, rsp *pb.U
 	// TODO
 
 	// 返回信息
-	rsp.UserLoginInfo = &pb.UserLoginInfo{
-		UserID: dataList[0].UserID,
-		Token:  uuid.New().String(),
+	rsp := &pb.UserLoginRsp{
+		UserLoginInfo: &pb.UserLoginInfo{
+			UserID: dataList[0].UserID,
+			Token:  uuid.New().String(),
+		},
 	}
 
-	return nil
+	return this_.response(c, rsp, in.Idempotent)
+}
+
+func (this_ *UserLogin) response(c *micro.User, rsp *pb.UserLoginRsp, idempotent int64) error {
+	pack := pb.NewPackage()
+	pack.PID = pb.PID_NodeDelivery
+	pack.MID = 101 // TODO: 改为RSP MID
+	pack.Idempotent = idempotent
+	pack.ToUserAddrs = []string{c.RemoteAddr()}
+	pack.Data = pb.ToBytes(rsp)
+
+	return c.Write(pb.ToBytes(pack))
 }

@@ -5,8 +5,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/iegad/hydra/micro"
 	"github.com/iegad/kraken/log"
-	"github.com/iegad/kraken/piper"
 	"github.com/iegad/sphinx/internal/cfg"
 	"github.com/iegad/sphinx/internal/com"
 	"github.com/iegad/sphinx/internal/m"
@@ -28,18 +28,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-	server, err := piper.NewServer(&m.Sphinx{}, &piper.ServerOption{
-		ID:        cfg.Instance.Server.ID,
-		Protocol:  cfg.Instance.Server.Protocol,
+	server, err := micro.NewHydra(&micro.Option{
+		Project:   cfg.Instance.Server.Project,
 		Service:   cfg.Instance.Server.Service,
 		EtcdHosts: cfg.Instance.Etcd.Hosts,
-		Host:      cfg.Instance.Server.Host,
-		MaxConn:   cfg.Instance.Server.MaxConn,
-		Timeout:   cfg.Instance.Server.Timeout,
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	server.Regist(&m.UserLogin{})
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT)
@@ -48,8 +46,10 @@ func main() {
 		server.Stop()
 	}()
 
-	err = server.Run()
+	err = server.Run("cerberus/node/tcp")
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	select {}
 }

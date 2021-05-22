@@ -1,6 +1,7 @@
 package cfg
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/google/uuid"
@@ -8,7 +9,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var Instance *config
+var (
+	Instance *config
+	NodePath string
+)
 
 type config struct {
 	Server *conf.Server `json:"server" yaml:"server"`
@@ -40,6 +44,8 @@ func Init(fname string) error {
 			return err
 		}
 	}
+
+	NodePath = fmt.Sprintf("%s/%s", conf.Server.Service, conf.Server.ID)
 
 	Instance = conf
 
