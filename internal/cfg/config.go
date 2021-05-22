@@ -1,7 +1,6 @@
 package cfg
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/google/uuid"
@@ -11,7 +10,6 @@ import (
 
 var (
 	Instance *config
-	NodePath string
 )
 
 type config struct {
@@ -45,9 +43,6 @@ func Init(fname string) error {
 		}
 	}
 
-	NodePath = fmt.Sprintf("%s/%s", conf.Server.Service, conf.Server.ID)
-
 	Instance = conf
-
 	return nil
 }

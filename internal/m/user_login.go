@@ -18,14 +18,15 @@ type UserLogin struct {
 }
 
 func (this_ *UserLogin) MID() int32 {
-	return 100
+	return pb.MID_UserLoginReq
 }
 
 func (this_ *UserLogin) Do(c *micro.User, in *pb.Package) error {
 	utils.Assert(c != nil && in != nil, "userLogin.do params are invalid")
 
-	req := &pb.UserLoginReq{}
+	log.Info("-------------------------------------")
 
+	req := pb.NewUserLoginReq()
 	err := proto.Unmarshal(in.Data, req)
 	if err != nil {
 		log.Error(err)
@@ -81,16 +82,19 @@ func (this_ *UserLogin) Do(c *micro.User, in *pb.Package) error {
 		},
 	}
 
+	c.UserID = rsp.UserLoginInfo.UserID
 	return this_.response(c, rsp, in.Idempotent)
 }
 
 func (this_ *UserLogin) response(c *micro.User, rsp *pb.UserLoginRsp, idempotent int64) error {
 	pack := pb.NewPackage()
 	pack.PID = pb.PID_NodeDelivery
-	pack.MID = 101 // TODO: 改为RSP MID
+	pack.MID = pb.MID_UserLoginRsp
 	pack.Idempotent = idempotent
 	pack.ToUserAddrs = []string{c.RemoteAddr()}
 	pack.Data = pb.ToBytes(rsp)
 
-	return c.Write(pb.ToBytes(pack))
+	data := pb.ToBytes(pack)
+	pb.DeletePackage(pack)
+	return c.Write(data)
 }

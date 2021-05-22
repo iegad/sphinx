@@ -1,11 +1,11 @@
 server:
-    host: 127.0.0.1:10000
-    protocol: kcp
-    maxConn: 100
-    timeout: 15
+    host: ""
+    protocol: ""
+    maxConn: 0
+    timeout: 0
     project: state
     service: sphinx
-    id: 1885c584-392c-43c7-a7a3-6a8b0ba93f86
+    id: 353abb99-aaac-4c02-9871-2b740d3af7ef
     logPath: ""
 etcd:
     hosts:
