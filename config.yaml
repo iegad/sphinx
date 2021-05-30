@@ -7,11 +7,13 @@ server:
     service: sphinx
     id: 353abb99-aaac-4c02-9871-2b740d3af7ef
     logPath: ""
+    
 etcd:
     hosts:
       - 127.0.0.1:2379
     user: ""
     pass: ""
+
 mysql:
     addr: 127.0.0.1
     port: 3306
