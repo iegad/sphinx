@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"github.com/iegad/hydra/micro"
@@ -42,6 +43,9 @@ func main() {
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT)
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
 	go func() {
 		<-done
 		server.Stop()
@@ -52,5 +56,5 @@ func main() {
 		log.Fatal(err)
 	}
 
-	select {}
+	wg.Wait()
 }
