@@ -3,6 +3,7 @@ package m
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/iegad/hydra/micro"
@@ -49,7 +50,7 @@ func (this_ *UserLogin) Do(c *micro.User, in *pb.Package) error {
 	if len(req.Email) > 0 {
 		where = fmt.Sprintf("F_EMAIL='%s'", req.Email)
 	} else if len(req.PhoneNum) > 0 {
-		where = fmt.Sprintf("F_PHONE='%s'", req.PhoneNum)
+		where = fmt.Sprintf("F_PHONE_NUM='%s'", req.PhoneNum)
 	}
 
 	dataList, err := home.QueryUserInfo(where, 0, 1, "", true, com.Mysql)
@@ -83,7 +84,7 @@ func (this_ *UserLogin) Do(c *micro.User, in *pb.Package) error {
 	}
 
 	c.UserID = rsp.UserLoginInfo.UserID
-	return this_.response(c, rsp, in.Idempotent)
+	return this_.response(c, rsp, time.Now().UnixNano())
 }
 
 func (this_ *UserLogin) response(c *micro.User, rsp *pb.UserLoginRsp, idempotent int64) error {
