@@ -54,8 +54,8 @@ func userLogin(cli client.IClient) error {
 	req.VCode = "12355"
 
 	out := pb.NewPackage()
-	out.PID = pb.PID_UserDelivery
-	out.MID = pb.MID_UserLoginReq
+	out.PID = pb.PackageID_PID_UserDelivery
+	out.MID = pb.MessageID_MID_UserLoginReq
 	out.Idempotent = time.Now().UnixNano()
 	out.Data = pb.ToBytes(req)
 	out.ToNodeAddr = NODE_ADDR
@@ -85,11 +85,11 @@ func userLogin(cli client.IClient) error {
 		return err
 	}
 
-	if in.PID != pb.PID_NodeDelivery {
+	if in.PID != pb.PackageID_PID_NodeDelivery {
 		return errors.New("---1")
 	}
 
-	if in.MID != pb.MID_UserLoginRsp {
+	if in.MID != pb.MessageID_MID_UserLoginRsp {
 		return errors.New("---2")
 	}
 
@@ -108,7 +108,7 @@ func userLogin(cli client.IClient) error {
 
 func ping(cli client.IClient) error {
 	out := pb.NewPackage()
-	out.PID = pb.PID_Ping
+	out.PID = pb.PackageID_PID_Ping
 	out.Idempotent = time.Now().UnixNano()
 
 	data := pb.ToBytes(out)

@@ -3,7 +3,6 @@ package m
 import (
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/iegad/hydra/micro"
@@ -15,55 +14,64 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+var (
+	ErrAccount = errors.New("account is invalid")
+	ErrVCode   = errors.New("vcode is invalid")
+)
+
 type UserLogin struct {
 }
 
-func (this_ *UserLogin) MID() int32 {
-	return pb.MID_UserLoginReq
+func (this_ *UserLogin) MID() pb.MessageID {
+	return pb.MessageID_MID_UserLoginReq
 }
 
 func (this_ *UserLogin) Do(c *micro.User, in *pb.Package) error {
 	utils.Assert(c != nil && in != nil, "userLogin.do params are invalid")
 
-	log.Info("-------------------------------------")
+	var (
+		req      = pb.NewUserLoginReq()
+		err      = proto.Unmarshal(in.Data, req)
+		user     *home.UserInfo
+		dataList []*home.UserInfo
+		where    = ""
+		rsp      = pb.NewUserLoginRsp()
+	)
 
-	req := pb.NewUserLoginReq()
-	err := proto.Unmarshal(in.Data, req)
 	if err != nil {
-		log.Error(err)
-		return err
+		c.Kick()
+		goto DO_EXIT
 	}
 
 	// 入参检查
 	if len(req.Email) == 0 && len(req.PhoneNum) == 0 {
-		return errors.New("account is invalid")
+		rsp.Code = -1
+		goto DO_EXIT
 	}
 
 	if len(req.VCode) == 0 {
-		return errors.New("vcode is invalid")
+		rsp.Code = -2
+		goto DO_EXIT
 	}
 
 	// 查询数据库
-	var (
-		where = ""
-	)
 	if len(req.Email) > 0 {
 		where = fmt.Sprintf("F_EMAIL='%s'", req.Email)
-	} else if len(req.PhoneNum) > 0 {
+	} else {
 		where = fmt.Sprintf("F_PHONE_NUM='%s'", req.PhoneNum)
 	}
 
-	dataList, err := home.QueryUserInfo(where, 0, 1, "", true, com.Mysql)
+	dataList, err = home.QueryUserInfo(where, 0, 1, "", true, com.Mysql)
 	if err != nil {
 		return err
 	}
 
 	if len(dataList) == 0 {
-		user := &home.UserInfo{
-			Email:    req.Email,
-			PhoneNum: req.PhoneNum,
-		}
-		err = home.InsertUserInfo(user, com.Mysql)
+		user = home.NewUserInfo()
+		user.Email = req.Email
+		user.PhoneNum = req.PhoneNum
+
+		err = home.AddUserInfo(user, com.Mysql)
 		if err != nil {
 			log.Error(err)
 			return err
@@ -76,26 +84,24 @@ func (this_ *UserLogin) Do(c *micro.User, in *pb.Package) error {
 	// TODO
 
 	// 返回信息
-	rsp := &pb.UserLoginRsp{
-		UserLoginInfo: &pb.UserLoginInfo{
-			UserID: dataList[0].UserID,
-			Token:  uuid.New().String(),
-		},
+	rsp.UserLoginInfo = pb.NewUserLoginInfo()
+	rsp.UserLoginInfo.UserID = dataList[0].UserID
+	rsp.UserLoginInfo.Token = uuid.New().String()
+	c.UserID = rsp.UserLoginInfo.UserID
+
+DO_EXIT:
+	err = c.Response(pb.MessageID_MID_UserLoginRsp, pb.ToBytes(rsp))
+
+	if rsp.UserLoginInfo != nil {
+		pb.DeleteUserLoginInfo(rsp.UserLoginInfo)
 	}
 
-	c.UserID = rsp.UserLoginInfo.UserID
-	return this_.response(c, rsp, time.Now().UnixNano())
-}
+	pb.DeleteUserLoginRsp(rsp)
+	pb.DeleteUserLoginReq(req)
 
-func (this_ *UserLogin) response(c *micro.User, rsp *pb.UserLoginRsp, idempotent int64) error {
-	pack := pb.NewPackage()
-	pack.PID = pb.PID_NodeDelivery
-	pack.MID = pb.MID_UserLoginRsp
-	pack.Idempotent = idempotent
-	pack.ToUserAddrs = []string{c.RemoteAddr()}
-	pack.Data = pb.ToBytes(rsp)
+	if user != nil {
+		home.DeleteUserInfo(user)
+	}
 
-	data := pb.ToBytes(pack)
-	pb.DeletePackage(pack)
-	return c.Write(data)
+	return err
 }
