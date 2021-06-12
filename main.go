@@ -30,10 +30,11 @@ func main() {
 	}
 
 	server, err := micro.NewHydra(&micro.Option{
-		Project:    cfg.Instance.Server.Project,
-		Service:    cfg.Instance.Server.Service,
-		EtcdHosts:  cfg.Instance.Etcd.Hosts,
-		UserClosed: m.UserClosed,
+		Project:      cfg.Instance.Server.Project,
+		Service:      cfg.Instance.Server.Service,
+		EtcdHosts:    cfg.Instance.Etcd.Hosts,
+		OnUserClosed: m.OnUserClosed,
+		OnIdempotent: m.OnIdempotent,
 	})
 	if err != nil {
 		log.Fatal(err)

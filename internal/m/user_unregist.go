@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/iegad/hydra/micro"
-	"github.com/iegad/hydra/mod/home"
+	"github.com/iegad/hydra/mod/basic"
 	"github.com/iegad/hydra/pb"
 	"github.com/iegad/kraken/utils"
 	"github.com/iegad/sphinx/internal/com"
@@ -46,7 +46,7 @@ func (this_ *UserUnregist) Do(c *micro.User, in *pb.Package) error {
 		where = fmt.Sprintf("F_PHONE_NUM='%s'", req.PhoneNum)
 	}
 
-	dataList, err := home.QueryUserInfo(where, 0, 1, "", true, com.Mysql)
+	dataList, err := basic.QueryUserInfo(where, 0, 1, "", true, com.Mysql)
 	if err != nil {
 		return err
 	}
@@ -55,7 +55,7 @@ func (this_ *UserUnregist) Do(c *micro.User, in *pb.Package) error {
 		return errors.New("F_EMAIL")
 	}
 
-	err = home.RemoveUserInfo(dataList[0].UserID, com.Mysql)
+	err = basic.RemoveUserInfo(dataList[0].UserID, com.Mysql)
 	if err != nil {
 		return err
 	}

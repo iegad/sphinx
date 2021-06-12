@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/iegad/hydra/micro"
-	"github.com/iegad/hydra/mod/home"
+	"github.com/iegad/hydra/mod/basic"
 	"github.com/iegad/hydra/pb"
 	"github.com/iegad/kraken/log"
 	"github.com/iegad/kraken/utils"
@@ -32,14 +32,14 @@ func (this_ *UserLogin) Do(c *micro.User, in *pb.Package) error {
 	var (
 		req      = pb.NewUserLoginReq()
 		err      = proto.Unmarshal(in.Data, req)
-		user     *home.UserInfo
-		dataList []*home.UserInfo
+		user     *basic.UserInfo
+		dataList []*basic.UserInfo
 		where    = ""
 		rsp      = pb.NewUserLoginRsp()
 	)
 
 	if err != nil {
-		c.Kick()
+		c.Kick(true)
 		goto DO_EXIT
 	}
 
@@ -61,17 +61,17 @@ func (this_ *UserLogin) Do(c *micro.User, in *pb.Package) error {
 		where = fmt.Sprintf("F_PHONE_NUM='%s'", req.PhoneNum)
 	}
 
-	dataList, err = home.QueryUserInfo(where, 0, 1, "", true, com.Mysql)
+	dataList, err = basic.QueryUserInfo(where, 0, 1, "", true, com.Mysql)
 	if err != nil {
 		return err
 	}
 
 	if len(dataList) == 0 {
-		user = home.NewUserInfo()
+		user = basic.NewUserInfo()
 		user.Email = req.Email
 		user.PhoneNum = req.PhoneNum
 
-		err = home.AddUserInfo(user, com.Mysql)
+		err = basic.AddUserInfo(user, com.Mysql)
 		if err != nil {
 			log.Error(err)
 			return err
@@ -90,7 +90,7 @@ func (this_ *UserLogin) Do(c *micro.User, in *pb.Package) error {
 	c.UserID = rsp.UserLoginInfo.UserID
 
 DO_EXIT:
-	err = c.Response(pb.MessageID_MID_UserLoginRsp, pb.ToBytes(rsp))
+	err = c.Response(in.Seq, pb.MessageID_MID_UserLoginRsp, pb.ToBytes(rsp))
 
 	if rsp.UserLoginInfo != nil {
 		pb.DeleteUserLoginInfo(rsp.UserLoginInfo)
@@ -100,7 +100,7 @@ DO_EXIT:
 	pb.DeleteUserLoginReq(req)
 
 	if user != nil {
-		home.DeleteUserInfo(user)
+		basic.DeleteUserInfo(user)
 	}
 
 	return err
