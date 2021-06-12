@@ -11,6 +11,7 @@ import (
 	"github.com/iegad/sphinx/internal/cfg"
 	"github.com/iegad/sphinx/internal/com"
 	"github.com/iegad/sphinx/internal/m"
+	"github.com/iegad/sphinx/internal/m/handlers"
 )
 
 func main() {
@@ -45,8 +46,9 @@ func main() {
 	}
 
 	// Step 5: 注册服务句柄
-	server.Regist(&m.UserLogin{})
-	server.Regist(&m.UserUnregist{})
+	server.Regist(&handlers.UserLogin{})
+	server.Regist(&handlers.UserUnregist{})
+	server.Regist(&handlers.ModifyUserInfo{})
 
 	// Step 6: 注册退出信号
 	done := make(chan os.Signal, 1)

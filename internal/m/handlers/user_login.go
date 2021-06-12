@@ -1,4 +1,4 @@
-package m
+package handlers
 
 import (
 	"fmt"
@@ -8,7 +8,6 @@ import (
 	"github.com/iegad/hydra/mod/basic"
 	"github.com/iegad/hydra/pb"
 	"github.com/iegad/kraken/log"
-	"github.com/iegad/kraken/utils"
 	"github.com/iegad/sphinx/internal/com"
 	"google.golang.org/protobuf/proto"
 )
@@ -20,21 +19,19 @@ func (this_ *UserLogin) MID() pb.MessageID {
 	return pb.MessageID_MID_UserLoginReq
 }
 
-func (this_ *UserLogin) Do(c *micro.User, in *pb.Package) error {
-	utils.Assert(c != nil && in != nil, "userLogin.do params are invalid")
-
+func (this_ *UserLogin) Do(user *micro.User, in *pb.Package) error {
 	var (
-		req      = pb.NewUserLoginReq()
-		rsp      = pb.NewUserLoginRsp()
-		err      = proto.Unmarshal(in.Data, req)
-		user     *pb.UserInfo
-		where    = ""
+		rsp      *pb.UserLoginRsp
+		uinfo    *pb.UserInfo
+		where    string
 		dataList []*pb.UserInfo
+		req      = pb.NewUserLoginReq()
+		err      = proto.Unmarshal(in.Data, req)
 	)
 
 	for dwf := true; dwf; dwf = false {
 		if err != nil {
-			c.Kick(true)
+			user.Kick(true)
 			break
 		}
 
@@ -58,39 +55,49 @@ func (this_ *UserLogin) Do(c *micro.User, in *pb.Package) error {
 
 		dataList, err = basic.QueryUserInfo(where, 0, 1, "", true, com.Mysql)
 		if err != nil {
+			rsp.Code = -103
 			break
 		}
 
 		if len(dataList) == 0 {
-			user = pb.NewUserInfo()
-			user.Email = req.Email
-			user.PhoneNum = req.PhoneNum
+			uinfo = pb.NewUserInfo()
+			uinfo.Email = req.Email
+			uinfo.PhoneNum = req.PhoneNum
 
-			err = basic.AddUserInfo(user, com.Mysql)
+			err = basic.AddUserInfo(uinfo, com.Mysql)
 			if err != nil {
-				log.Error(err)
+				rsp.Code = -100
 				break
 			}
 
-			dataList = append(dataList, user)
+			dataList = append(dataList, uinfo)
 		}
 
 		// 在REDIS中记录会话信息
 		// TODO
 
 		// 返回信息
+		uinfo.Ver = ""
+		uinfo.VerCode = 0
 		rsp.UserLoginInfo = pb.NewUserLoginInfo()
+		rsp.UserLoginInfo.UserInfo = uinfo
 		rsp.UserLoginInfo.UserID = dataList[0].UserID
 		rsp.UserLoginInfo.Token = uuid.New().String()
-		c.UserID = rsp.UserLoginInfo.UserID
+		user.UserID = rsp.UserLoginInfo.UserID
+	}
 
-		err = c.Response(in.Seq, pb.MessageID_MID_UserLoginRsp, pb.ToBytes(rsp))
+	if user.Valid() {
+		err = user.Response(in.Seq, pb.MessageID_MID_UserLoginRsp, pb.ToBytes(rsp))
+	}
+
+	if err != nil {
+		log.Error(err)
 	}
 
 	pb.DeleteUserLoginInfo(rsp.UserLoginInfo)
 	pb.DeleteUserLoginRsp(rsp)
 	pb.DeleteUserLoginReq(req)
-	pb.DeleteUserInfo(user)
+	pb.DeleteUserInfo(uinfo)
 
-	return err
+	return nil
 }
