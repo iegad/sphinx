@@ -1,7 +1,6 @@
 package m
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -12,11 +11,6 @@ import (
 	"github.com/iegad/kraken/utils"
 	"github.com/iegad/sphinx/internal/com"
 	"google.golang.org/protobuf/proto"
-)
-
-var (
-	ErrAccount = errors.New("account is invalid")
-	ErrVCode   = errors.New("vcode is invalid")
 )
 
 type UserLogin struct {
