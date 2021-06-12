@@ -31,77 +31,72 @@ func (this_ *UserLogin) Do(c *micro.User, in *pb.Package) error {
 
 	var (
 		req      = pb.NewUserLoginReq()
-		err      = proto.Unmarshal(in.Data, req)
-		user     *basic.UserInfo
-		dataList []*basic.UserInfo
-		where    = ""
 		rsp      = pb.NewUserLoginRsp()
+		err      = proto.Unmarshal(in.Data, req)
+		user     *pb.UserInfo
+		where    = ""
+		dataList []*pb.UserInfo
 	)
 
-	if err != nil {
-		c.Kick(true)
-		goto DO_EXIT
-	}
-
-	// 入参检查
-	if len(req.Email) == 0 && len(req.PhoneNum) == 0 {
-		rsp.Code = -1
-		goto DO_EXIT
-	}
-
-	if len(req.VCode) == 0 {
-		rsp.Code = -2
-		goto DO_EXIT
-	}
-
-	// 查询数据库
-	if len(req.Email) > 0 {
-		where = fmt.Sprintf("F_EMAIL='%s'", req.Email)
-	} else {
-		where = fmt.Sprintf("F_PHONE_NUM='%s'", req.PhoneNum)
-	}
-
-	dataList, err = basic.QueryUserInfo(where, 0, 1, "", true, com.Mysql)
-	if err != nil {
-		return err
-	}
-
-	if len(dataList) == 0 {
-		user = basic.NewUserInfo()
-		user.Email = req.Email
-		user.PhoneNum = req.PhoneNum
-
-		err = basic.AddUserInfo(user, com.Mysql)
+	for dwf := true; dwf; dwf = false {
 		if err != nil {
-			log.Error(err)
-			return err
+			c.Kick(true)
+			break
 		}
 
-		dataList = append(dataList, user)
+		// 入参检查
+		if len(req.Email) == 0 && len(req.PhoneNum) == 0 {
+			rsp.Code = -1
+			break
+		}
+
+		if len(req.VCode) == 0 {
+			rsp.Code = -2
+			break
+		}
+
+		// 查询数据库
+		if len(req.Email) > 0 {
+			where = fmt.Sprintf("F_EMAIL='%s'", req.Email)
+		} else {
+			where = fmt.Sprintf("F_PHONE_NUM='%s'", req.PhoneNum)
+		}
+
+		dataList, err = basic.QueryUserInfo(where, 0, 1, "", true, com.Mysql)
+		if err != nil {
+			break
+		}
+
+		if len(dataList) == 0 {
+			user = pb.NewUserInfo()
+			user.Email = req.Email
+			user.PhoneNum = req.PhoneNum
+
+			err = basic.AddUserInfo(user, com.Mysql)
+			if err != nil {
+				log.Error(err)
+				break
+			}
+
+			dataList = append(dataList, user)
+		}
+
+		// 在REDIS中记录会话信息
+		// TODO
+
+		// 返回信息
+		rsp.UserLoginInfo = pb.NewUserLoginInfo()
+		rsp.UserLoginInfo.UserID = dataList[0].UserID
+		rsp.UserLoginInfo.Token = uuid.New().String()
+		c.UserID = rsp.UserLoginInfo.UserID
+
+		err = c.Response(in.Seq, pb.MessageID_MID_UserLoginRsp, pb.ToBytes(rsp))
 	}
 
-	// 在REDIS中记录会话信息
-	// TODO
-
-	// 返回信息
-	rsp.UserLoginInfo = pb.NewUserLoginInfo()
-	rsp.UserLoginInfo.UserID = dataList[0].UserID
-	rsp.UserLoginInfo.Token = uuid.New().String()
-	c.UserID = rsp.UserLoginInfo.UserID
-
-DO_EXIT:
-	err = c.Response(in.Seq, pb.MessageID_MID_UserLoginRsp, pb.ToBytes(rsp))
-
-	if rsp.UserLoginInfo != nil {
-		pb.DeleteUserLoginInfo(rsp.UserLoginInfo)
-	}
-
+	pb.DeleteUserLoginInfo(rsp.UserLoginInfo)
 	pb.DeleteUserLoginRsp(rsp)
 	pb.DeleteUserLoginReq(req)
-
-	if user != nil {
-		basic.DeleteUserInfo(user)
-	}
+	pb.DeleteUserInfo(user)
 
 	return err
 }
