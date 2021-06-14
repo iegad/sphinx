@@ -81,10 +81,11 @@ func (this_ *UserLogin) Do(user *micro.User, in *pb.Package) error {
 		// 返回信息
 		dataList[0].Ver = ""
 		dataList[0].VerCode = 0
+		token := [16]byte(uuid.New())
 		rsp.UserLoginInfo = pb.NewUserLoginInfo()
 		rsp.UserLoginInfo.UserInfo = dataList[0]
 		rsp.UserLoginInfo.UserID = dataList[0].UserID
-		rsp.UserLoginInfo.Token = uuid.New().String()
+		rsp.UserLoginInfo.Token = token[:]
 		user.UserID = rsp.UserLoginInfo.UserID
 	}
 
