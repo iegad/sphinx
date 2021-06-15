@@ -3,8 +3,8 @@ package cfg
 import (
 	"os"
 
-	"github.com/google/uuid"
 	"github.com/iegad/kraken/conf"
+	"github.com/iegad/kraken/utils"
 	"gopkg.in/yaml.v3"
 )
 
@@ -31,7 +31,7 @@ func Init(fname string) error {
 	}
 
 	if len(conf.Server.ID) == 0 {
-		conf.Server.ID = uuid.New().String()
+		conf.Server.ID = utils.UUID_String()
 		data, err = yaml.Marshal(conf)
 		if err != nil {
 			return err

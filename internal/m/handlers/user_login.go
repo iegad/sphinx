@@ -3,11 +3,11 @@ package handlers
 import (
 	"fmt"
 
-	"github.com/google/uuid"
 	"github.com/iegad/hydra/micro"
 	"github.com/iegad/hydra/mod/basic"
 	"github.com/iegad/hydra/pb"
 	"github.com/iegad/kraken/log"
+	"github.com/iegad/kraken/utils"
 	"github.com/iegad/sphinx/internal/com"
 	"google.golang.org/protobuf/proto"
 )
@@ -81,7 +81,7 @@ func (this_ *UserLogin) Do(user *micro.User, in *pb.Package) error {
 		// 返回信息
 		dataList[0].Ver = ""
 		dataList[0].VerCode = 0
-		token := [16]byte(uuid.New())
+		token := utils.UUID_Bytes()
 		rsp.UserLoginInfo = pb.NewUserLoginInfo()
 		rsp.UserLoginInfo.UserInfo = dataList[0]
 		rsp.UserLoginInfo.UserID = dataList[0].UserID
