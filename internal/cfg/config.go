@@ -16,6 +16,7 @@ type config struct {
 	Server *conf.Server `json:"server" yaml:"server"`
 	Etcd   *conf.Etcd   `json:"etcd"   yaml:"etcd"`
 	MySql  *conf.MySql  `json:"mysql"  yaml:"mysql"`
+	Redis  *conf.Redis  `json:"redis"  yaml:"redis"`
 }
 
 func Init(fname string) error {

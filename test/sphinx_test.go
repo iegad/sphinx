@@ -102,7 +102,7 @@ func userLogin(cli client.IClient) error {
 		return errors.New(rsp.Error)
 	}
 
-	log.Debug(rsp.UserLoginInfo)
+	log.Debug(rsp.UserSession)
 	return nil
 }
 

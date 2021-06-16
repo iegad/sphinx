@@ -1,21 +1,25 @@
 server:
-    host: ""
-    protocol: ""
-    maxConn: 0
-    timeout: 0
-    project: state
-    service: sphinx
-    id: 353abb99-aaac-4c02-9871-2b740d3af7ef
-    logPath: ""
+  host: ""
+  protocol: ""
+  maxConn: 0
+  timeout: 0
+  project: state
+  service: sphinx
+  id: 353abb99-aaac-4c02-9871-2b740d3af7ef
+  logPath: ""
     
 etcd:
-    hosts:
-      - 127.0.0.1:2379
-    user: ""
-    pass: ""
+  hosts:
+    - 127.0.0.1:2379
+  user: ""
+  pass: ""
 
 mysql:
-    addr: 127.0.0.1
-    port: 3306
-    user: root
-    pass: "123456"
+  addr: 127.0.0.1
+  port: 3306
+  user: root
+  pass: "123456"
+
+redis:
+  hosts: 
+    - "127.0.0.1:6379"
